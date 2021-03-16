@@ -9,6 +9,7 @@ import io.micronaut.http.annotation.Body
 import io.micronaut.http.annotation.Controller
 import io.micronaut.http.annotation.Post
 import io.micronaut.validation.Validated
+import org.slf4j.LoggerFactory
 import java.util.*
 import javax.validation.Valid
 
@@ -16,17 +17,18 @@ import javax.validation.Valid
 @Validated
 class RegistraChavePixController(val grpClient: RegistrarNovaChavePixServiceGrpc.RegistrarNovaChavePixServiceBlockingStub) {
 
+    private val logger = LoggerFactory.getLogger(this::class.java)
+
     @Post("/api/v1/clientes/{clienteId}/pix")
     fun registra(clienteId: UUID, @Valid @Body request: NovaChavePixRequestRest): HttpResponse<Any> {
 
-        val novaChave = NovaChavePixRequest.newBuilder()
-            .setIdentificador(clienteId.toString())
-            .setTipoChave(TipoChave.valueOf(request.tipoChave!!.name))
-            .setValorChave(request.valorChave)
-            .setTipoConta(TipoConta.valueOf(request.tipoConta!!.name))
-            .build()
+        logger.info("Registro da chave: ${request.valorChave}, referente a conta do cliente: ${clienteId}")
+
+        val novaChave = request.toModel(clienteId)
 
         val response = grpClient.registrar(novaChave)
+
+        logger.info("Chave Pix cadastrada com sucesso no sistema do Itaú e Bcb")
 
         val location = HttpResponse.uri("/api/v1/clientes/$clienteId/pix/${response.pixId}")
 

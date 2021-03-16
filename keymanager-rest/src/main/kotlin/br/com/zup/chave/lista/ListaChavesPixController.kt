@@ -2,11 +2,12 @@ package br.com.zup.chave.lista
 
 import br.com.zup.ClientePixRequest
 import br.com.zup.ListaChavesPixServiceGrpc
-import br.com.zup.chave.TipoChave
-import br.com.zup.chave.TipoConta
+import br.com.zup.chave.TipoChaveRest
+import br.com.zup.chave.TipoContaRest
 import io.micronaut.http.HttpResponse
 import io.micronaut.http.annotation.Controller
 import io.micronaut.http.annotation.Get
+import org.slf4j.LoggerFactory
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.util.*
@@ -14,8 +15,12 @@ import java.util.*
 @Controller
 class ListaChavesPixController(val grpcClient: ListaChavesPixServiceGrpc.ListaChavesPixServiceBlockingStub) {
 
+    private val logger = LoggerFactory.getLogger(this::class.java)
+
     @Get("/api/v1/clientes/{clienteId}/pix")
     fun lista(clienteId: UUID) : HttpResponse<Any> {
+
+        logger.info("Pedido de listagem para as chaves do clienteId: $clienteId")
 
         val cliente = ClientePixRequest.newBuilder()
             .setIdentificador(clienteId.toString())
@@ -24,23 +29,8 @@ class ListaChavesPixController(val grpcClient: ListaChavesPixServiceGrpc.ListaCh
         val responseGrpc = grpcClient.listar(cliente)
 
         val response = responseGrpc.chavePixList.map {
-            ChavePixDetalhadaNaListaResponse(
-                UUID.fromString(it.pixId),
-                UUID.fromString(it.clienteId),
-                TipoChave.valueOf(it.tipoChave),
-                it.valorChave,
-                TipoConta.valueOf(it.tipoConta),
-                it.criadaEm.let {
-                    LocalDateTime.ofEpochSecond(
-                        it.seconds,
-                        it.nanos,
-                        ZoneOffset.UTC
-                    )
-                }
-            )
+            responseGrpc.listar(it)
         }
-
-        println(response)
 
         return HttpResponse.ok(response)
 

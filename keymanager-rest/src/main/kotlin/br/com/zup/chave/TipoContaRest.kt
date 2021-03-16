@@ -1,5 +1,5 @@
 package br.com.zup.chave
 
-enum class TipoConta {
+enum class TipoContaRest {
     CONTA_CORRENTE, CONTA_POUPANCA
 }
