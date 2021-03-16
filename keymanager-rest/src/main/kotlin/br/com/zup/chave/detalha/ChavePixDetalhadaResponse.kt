@@ -1,14 +1,16 @@
 package br.com.zup.chave.detalha
 
-import br.com.zup.chave.TipoChave
-import br.com.zup.chave.TipoConta
+import br.com.zup.DetalhamentoPixResponse
+import br.com.zup.chave.TipoChaveRest
+import br.com.zup.chave.TipoContaRest
 import java.time.LocalDateTime
+import java.time.ZoneOffset
 import java.util.*
 
 data class ChavePixDetalhadaResponse(
     val pixId: UUID,
     val clienteId: UUID,
-    val tipoChave: TipoChave,
+    val tipoChaveRest: TipoChaveRest,
     val valorChave: String,
     val conta: ContaAssociada,
     val registradaEm: LocalDateTime
@@ -21,5 +23,26 @@ data class ContaAssociada(
     val instituicao: String,
     val agencia: String,
     val conta: String,
-    val tipoConta: TipoConta
+    val tipoContaRest: TipoContaRest
 )
+
+fun DetalhamentoPixResponse.toModel() : ChavePixDetalhadaResponse {
+    return ChavePixDetalhadaResponse(UUID.fromString(pixId),
+        UUID.fromString(clientId),
+        TipoChaveRest.valueOf(tipoChave),
+        valorChave,
+        ContaAssociada(conta.nome,
+            conta.cpf,
+            conta.instituicao,
+            conta.agencia,
+            conta.conta,
+            TipoContaRest.valueOf(conta.tipo)
+        ),
+        registradaEm.let {
+            LocalDateTime.ofEpochSecond(
+                it.seconds,
+                it.nanos,
+                ZoneOffset.UTC
+            )
+        })
+}

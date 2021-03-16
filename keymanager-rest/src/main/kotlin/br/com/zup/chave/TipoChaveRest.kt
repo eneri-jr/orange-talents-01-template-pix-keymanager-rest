@@ -3,7 +3,7 @@ package br.com.zup.chave
 import io.micronaut.validation.validator.constraints.EmailValidator
 import org.hibernate.validator.internal.constraintvalidators.hv.br.CPFValidator
 
-enum class TipoChave {
+enum class TipoChaveRest {
 
     CPF {
         override fun valida(chave: String?): Boolean {

@@ -2,20 +2,21 @@ package br.com.zup.chave.detalha
 
 import br.com.zup.DetalhaChavePixRequest
 import br.com.zup.DetalhaChavePixServiceGrpc
-import br.com.zup.chave.TipoChave
-import br.com.zup.chave.TipoConta
 import io.micronaut.http.HttpResponse
 import io.micronaut.http.annotation.Controller
 import io.micronaut.http.annotation.Get
-import java.time.LocalDateTime
-import java.time.ZoneOffset
+import org.slf4j.LoggerFactory
 import java.util.*
 
 @Controller
 class DetalhaChavePixController(val grpcClient: DetalhaChavePixServiceGrpc.DetalhaChavePixServiceBlockingStub) {
 
+    private val logger = LoggerFactory.getLogger(this::class.java)
+
     @Get("/api/v1/clientes/{clienteId}/pix/{pixId}")
     fun detalha(clienteId: UUID, pixId: UUID) : HttpResponse<Any> {
+
+        logger.info("Pedido de detalhamento para a chave: $pixId, usando o sistema interno")
 
         val chavePix = DetalhaChavePixRequest.newBuilder()
             .setDados(DetalhaChavePixRequest.DadosPixInterno.newBuilder()
@@ -26,26 +27,7 @@ class DetalhaChavePixController(val grpcClient: DetalhaChavePixServiceGrpc.Detal
 
         val responseGrpc = grpcClient.detalhar(chavePix)
 
-        val response = ChavePixDetalhadaResponse(UUID.fromString(responseGrpc.pixId),
-            UUID.fromString(responseGrpc.clientId),
-            TipoChave.valueOf(responseGrpc.tipoChave),
-            responseGrpc.valorChave,
-            ContaAssociada(responseGrpc.conta.nome,
-                responseGrpc.conta.cpf,
-                responseGrpc.conta.instituicao,
-                responseGrpc.conta.agencia,
-                responseGrpc.conta.conta,
-                TipoConta.valueOf(responseGrpc.conta.tipo)
-                ),
-            responseGrpc.registradaEm.let {
-                LocalDateTime.ofEpochSecond(
-                    it.seconds,
-                    it.nanos,
-                    ZoneOffset.UTC
-                )
-            })
-
-        println(response)
+        val response = responseGrpc.toModel()
 
         return HttpResponse.ok(response)
     }
